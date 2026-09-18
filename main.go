@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -16,7 +17,7 @@ func main() {
 	_ = godotenv.Load()
 
 	db := config.ConnectDatabase()
-	
+
 	// MIGRATION: Category harus di atas Menu karena Menu bergantung pada ID Category
 	err := db.AutoMigrate(&domain.Category{}, &domain.Menu{})
 	if err != nil {
@@ -48,5 +49,10 @@ func main() {
 	// REGISTER ENDPOINTS
 	httpDelivery.RegisterHandlers(r, catUseCase, menuUseCase)
 
-	r.Run(":8080")
+	// r.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // Fallback untuk lokal Laragon
+	}
+	r.Run(":" + port)
 }
