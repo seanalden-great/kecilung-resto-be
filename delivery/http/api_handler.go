@@ -25,7 +25,7 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 	menu := api.Group("/menus")
 	{
 		menu.GET("", fetchMenus(mu))
-		menu.GET("/api/menus/category/:id", getMenusByCategory(mu))
+		menu.GET("/category/:id", getMenusByCategory(mu))
 		menu.POST("", createMenu(mu))
 		menu.PUT("/:id", updateMenu(mu))
 		menu.DELETE("/:id", deleteMenu(mu))
