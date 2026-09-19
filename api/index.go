@@ -18,7 +18,7 @@
 // func init() {
 // 	// Koneksi Database (menggunakan variabel environment Vercel)
 // 	db := config.ConnectDatabase()
-
+	
 // 	// Migrasi Tabel
 // 	err := db.AutoMigrate(&domain.Category{}, &domain.Menu{})
 // 	if err != nil {
@@ -64,7 +64,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
+	"sync" // 1. Tambahkan package sync bawaan Go
 
 	"github.com/gin-gonic/gin"
 	"github.com/seanalden-great/kecilung-resto-be/config"
@@ -73,8 +73,6 @@ import (
 	"github.com/seanalden-great/kecilung-resto-be/repository"
 	"github.com/seanalden-great/kecilung-resto-be/usecase"
 )
-
-// var app *gin.Engine
 
 var (
 	app  *gin.Engine
