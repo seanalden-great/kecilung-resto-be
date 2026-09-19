@@ -5,6 +5,7 @@ type Category struct {
 	Code        string `json:"code" gorm:"size:50;uniqueIndex"` // Tambahkan size:50 di sini
 	Name        string `json:"name" gorm:"size:255"`            // Menjadi varchar(255)
 	Description string `json:"description"`                     // Tetap longtext
+	ImageURL    string `json:"image_url"` // === TAMBAHAN BARU ===
 }
 
 type CategoryRepository interface {

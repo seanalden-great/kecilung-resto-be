@@ -120,13 +120,65 @@ func getMenusByCategory(u domain.MenuUsecase) gin.HandlerFunc {
 	}
 }
 
+// func createCategory(u domain.CategoryUsecase) gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		var cat domain.Category
+// 		if err := c.ShouldBindJSON(&cat); err != nil {
+// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		if err := u.Create(&cat); err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		c.JSON(http.StatusCreated, gin.H{"message": "Kategori berhasil dibuat", "data": cat})
+// 	}
+// }
+
+// func updateCategory(u domain.CategoryUsecase) gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		id, _ := strconv.Atoi(c.Param("id"))
+// 		var cat domain.Category
+// 		if err := c.ShouldBindJSON(&cat); err != nil {
+// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		if err := u.Update(uint(id), &cat); err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		c.JSON(http.StatusOK, gin.H{"message": "Kategori berhasil diupdate"})
+// 	}
+// }
+
 func createCategory(u domain.CategoryUsecase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var cat domain.Category
-		if err := c.ShouldBindJSON(&cat); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+		// 1. Ambil input teks dari form-data
+		code := c.PostForm("code")
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+
+		var imageURL string
+
+		// 2. Cek apakah ada file gambar yang dilampirkan
+		file, err := c.FormFile("image")
+		if err == nil {
+			uploadedURL, errUpload := utils.UploadToCleverCloud(file)
+			if errUpload != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "S3 Error: " + errUpload.Error()})
+				return
+			}
+			imageURL = uploadedURL
 		}
+
+		// 3. Susun struct Kategori
+		cat := domain.Category{
+			Code:        code,
+			Name:        name,
+			Description: description,
+			ImageURL:    imageURL,
+		}
+
 		if err := u.Create(&cat); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -138,11 +190,40 @@ func createCategory(u domain.CategoryUsecase) gin.HandlerFunc {
 func updateCategory(u domain.CategoryUsecase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
-		var cat domain.Category
-		if err := c.ShouldBindJSON(&cat); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		// 1. Ambil data kategori lama
+		existingCat, err := u.GetByID(uint(id))
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Kategori tidak ditemukan"})
 			return
 		}
+
+		// 2. Ambil data baru
+		code := c.PostForm("code")
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+		
+		// Set default gambar ke gambar lama
+		imageURL := existingCat.ImageURL
+
+		// 3. Cek apakah ada gambar baru
+		file, err := c.FormFile("image")
+		if err == nil {
+			uploadedURL, errUpload := utils.UploadToCleverCloud(file)
+			if errUpload != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "S3 Error: " + errUpload.Error()})
+				return
+			}
+			imageURL = uploadedURL
+		}
+
+		cat := domain.Category{
+			Code:        code,
+			Name:        name,
+			Description: description,
+			ImageURL:    imageURL,
+		}
+
 		if err := u.Update(uint(id), &cat); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
