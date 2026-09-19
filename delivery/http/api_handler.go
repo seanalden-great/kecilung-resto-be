@@ -25,7 +25,7 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 	menu := api.Group("/menus")
 	{
 		menu.GET("", fetchMenus(mu))
-		menu.GET("", getMenusByCategory(mu))
+		menu.GET("/api/menus/category/:id", getMenusByCategory(mu))
 		menu.POST("", createMenu(mu))
 		menu.PUT("/:id", updateMenu(mu))
 		menu.DELETE("/:id", deleteMenu(mu))
@@ -44,14 +44,37 @@ func fetchCategories(u domain.CategoryUsecase) gin.HandlerFunc {
 	}
 }
 
+// func getMenusByCategory(u domain.MenuUsecase) gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		id, _ := strconv.Atoi(c.Param("id"))
+// 		menus, err := u.GetByCategoryID(uint(id))
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		c.JSON(http.StatusOK, gin.H{"data": menus})
+// 	}
+// }
+
 func getMenusByCategory(u domain.MenuUsecase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id, _ := strconv.Atoi(c.Param("id"))
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID Kategori tidak valid"})
+			return
+		}
+
 		menus, err := u.GetByCategoryID(uint(id))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
+		// Pengaman: Jika tidak ada menu di kategori ini, kembalikan array kosong
+		if menus == nil {
+			menus = []domain.Menu{}
+		}
+
 		c.JSON(http.StatusOK, gin.H{"data": menus})
 	}
 }
