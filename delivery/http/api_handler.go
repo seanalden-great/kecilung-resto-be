@@ -128,7 +128,10 @@ func createMenu(u domain.MenuUsecase) gin.HandlerFunc {
 			// Jika ada file, unggah ke Clever Cloud S3
 			uploadedURL, errUpload := utils.UploadToCleverCloud(file)
 			if errUpload != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengunggah gambar ke server S3"})
+				// c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengunggah gambar ke server S3"})
+				// return
+				// UBAH BARIS INI:
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "S3 Error: " + errUpload.Error()})
 				return
 			}
 			imageURL = uploadedURL
@@ -195,7 +198,10 @@ func updateMenu(u domain.MenuUsecase) gin.HandlerFunc {
 			// Jika ada, unggah dan timpa URL gambar lama dengan yang baru
 			uploadedURL, errUpload := utils.UploadToCleverCloud(file)
 			if errUpload != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengunggah gambar baru ke S3"})
+				// c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengunggah gambar baru ke S3"})
+				// return
+				// UBAH BARIS INI:
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "S3 Error: " + errUpload.Error()})
 				return
 			}
 			imageURL = uploadedURL
