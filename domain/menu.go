@@ -40,6 +40,7 @@ type Menu struct {
 type MenuRepository interface {
 	FetchAll() ([]Menu, error)
 	FindByID(id uint) (Menu, error)
+	FetchByCategoryID(categoryID uint) ([]Menu, error) // Tambahan baru
 	Store(m *Menu) error
 	Update(m *Menu) error
 	Delete(id uint) error
@@ -48,6 +49,7 @@ type MenuRepository interface {
 type MenuUsecase interface {
 	GetAll() ([]Menu, error)
 	GetByID(id uint) (Menu, error)
+	GetByCategoryID(categoryID uint) ([]Menu, error) // Tambahan baru
 	Create(m *Menu) error
 	Update(id uint, m *Menu) error
 	Delete(id uint) error

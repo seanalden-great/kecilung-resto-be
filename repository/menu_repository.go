@@ -19,6 +19,12 @@ func (r *menuRepo) FetchAll() ([]domain.Menu, error) {
 	return menus, err
 }
 
+func (r *menuRepo) FetchByCategoryID(categoryID uint) ([]domain.Menu, error) {
+	var menus []domain.Menu
+	err := r.db.Preload("Category").Where("category_id = ?", categoryID).Find(&menus).Error
+	return menus, err
+}
+
 func (r *menuRepo) FindByID(id uint) (domain.Menu, error) {
 	var menu domain.Menu
 	err := r.db.Preload("Category").First(&menu, id).Error

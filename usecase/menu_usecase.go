@@ -14,6 +14,10 @@ func (u *menuUsecase) GetAll() ([]domain.Menu, error) {
 	return u.repo.FetchAll()
 }
 
+func (u *menuUsecase) GetByCategoryID(categoryID uint) ([]domain.Menu, error) {
+	return u.repo.FetchByCategoryID(categoryID)
+}
+
 func (u *menuUsecase) GetByID(id uint) (domain.Menu, error) {
 	return u.repo.FindByID(id)
 }

@@ -13,9 +13,16 @@ func NewCategoryRepository(db *gorm.DB) domain.CategoryRepository {
 	return &categoryRepo{db}
 }
 
+// func (r *categoryRepo) FetchAll() ([]domain.Category, error) {
+// 	var categories []domain.Category
+// 	err := r.db.Find(&categories).Error
+// 	return categories, err
+// }
+
 func (r *categoryRepo) FetchAll() ([]domain.Category, error) {
 	var categories []domain.Category
-	err := r.db.Find(&categories).Error
+	// Urutkan berdasarkan code dari terkecil ke terbesar
+	err := r.db.Order("code asc").Find(&categories).Error
 	return categories, err
 }
 

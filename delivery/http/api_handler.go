@@ -25,6 +25,7 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 	menu := api.Group("/menus")
 	{
 		menu.GET("", fetchMenus(mu))
+		cat.GET("", getMenusByCategory(mu))
 		menu.POST("", createMenu(mu))
 		menu.PUT("/:id", updateMenu(mu))
 		menu.DELETE("/:id", deleteMenu(mu))
@@ -40,6 +41,18 @@ func fetchCategories(u domain.CategoryUsecase) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
+func getMenusByCategory(u domain.MenuUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		menus, err := u.GetByCategoryID(uint(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": menus})
 	}
 }
 
