@@ -85,7 +85,14 @@ func initApp() {
 	db := config.ConnectDatabase()
 	
 	// Migrasi Tabel
-	err := db.AutoMigrate(&domain.Category{}, &domain.Menu{})
+	err := db.AutoMigrate(
+		&domain.Category{}, 
+		&domain.Menu{},
+		&domain.GreetingMessage{}, 
+		&domain.Catering{}, 
+		&domain.CateringImage{}, 
+		&domain.Booking{},
+	)
 	if err != nil {
 		log.Println("Gagal migrasi:", err)
 	}
