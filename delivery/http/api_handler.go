@@ -58,10 +58,13 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 	// Routes Catering
 	catering := api.Group("/catering")
 	{
-		catering.GET("/greeting", getGreeting(catUsecase)) 
+		catering.GET("/greeting", getGreeting(catUsecase))
 		catering.PUT("/greeting", updateGreeting(catUsecase))
 		catering.GET("/packages", getCaterings(catUsecase))
 		catering.POST("/packages", createCateringPackage(catUsecase))
+		// Tambahkan 2 baris ini di dalam RegisterHandlers -> catering := api.Group("/catering")
+		catering.PUT("/packages/:id", updateCateringPackage(catUsecase))
+		catering.DELETE("/packages/:id", deleteCateringPackage(catUsecase))
 		catering.GET("/bookings", getBookings(catUsecase))
 		catering.POST("/bookings", createBooking(catUsecase))
 		catering.PUT("/bookings/:id/approve", approveBooking(catUsecase))
@@ -386,7 +389,7 @@ func createCateringPackage(u domain.CateringUsecase) gin.HandlerFunc {
 		description := c.PostForm("description")
 
 		var images []domain.CateringImage
-		
+
 		// Deteksi multi-upload
 		form, err := c.MultipartForm()
 		if err == nil {
@@ -399,12 +402,50 @@ func createCateringPackage(u domain.CateringUsecase) gin.HandlerFunc {
 			}
 		}
 
-		catering := domain.Catering{ Name: name, Description: description, Images: images }
+		catering := domain.Catering{Name: name, Description: description, Images: images}
 		if err := u.CreateCatering(&catering); err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(201, gin.H{"message": "Katering ditambahkan"})
+	}
+}
+
+func updateCateringPackage(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+
+		var images []domain.CateringImage
+		form, err := c.MultipartForm()
+		if err == nil {
+			files := form.File["images"]
+			for _, file := range files {
+				url, errUp := utils.UploadToCleverCloud(file)
+				if errUp == nil {
+					images = append(images, domain.CateringImage{ImageURL: url})
+				}
+			}
+		}
+
+		catering := domain.Catering{Name: name, Description: description, Images: images}
+		if err := u.UpdateCatering(uint(id), &catering); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Katering berhasil diupdate"})
+	}
+}
+
+func deleteCateringPackage(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		if err := u.DeleteCatering(uint(id)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Katering berhasil dihapus"})
 	}
 }
 

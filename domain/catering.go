@@ -37,6 +37,8 @@ type CateringRepository interface {
 	FetchAllCaterings() ([]Catering, error)
 	FindCateringByID(id uint) (Catering, error)
 	CreateCatering(c *Catering) error
+	UpdateCatering(c *Catering) error // Fungsi Update Baru
+	DeleteCatering(id uint) error
 	
 	FetchBookings() ([]Booking, error)
 	CreateBooking(b *Booking) error
@@ -51,6 +53,8 @@ type CateringUsecase interface {
 	GetAllCaterings() ([]Catering, error)
 	GetCateringByID(id uint) (Catering, error)
 	CreateCatering(c *Catering) error
+	UpdateCatering(id uint, c *Catering) error // Fungsi Update Baru
+	DeleteCatering(id uint) error
 	
 	GetAllBookings() ([]Booking, error)
 	CreateBooking(b *Booking) error

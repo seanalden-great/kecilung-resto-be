@@ -19,6 +19,17 @@ func (u *cateringUsecase) GetAllCaterings() ([]domain.Catering, error) { return 
 func (u *cateringUsecase) GetCateringByID(id uint) (domain.Catering, error) { return u.repo.FindCateringByID(id) }
 func (u *cateringUsecase) CreateCatering(c *domain.Catering) error { return u.repo.CreateCatering(c) }
 
+// === TAMBAHAN BARU ===
+func (u *cateringUsecase) UpdateCatering(id uint, c *domain.Catering) error {
+	c.ID = id
+	return u.repo.UpdateCatering(c)
+}
+
+func (u *cateringUsecase) DeleteCatering(id uint) error {
+	return u.repo.DeleteCatering(id)
+}
+// =====================
+
 func (u *cateringUsecase) GetAllBookings() ([]domain.Booking, error) { return u.repo.FetchBookings() }
 
 func (u *cateringUsecase) CreateBooking(b *domain.Booking) error {

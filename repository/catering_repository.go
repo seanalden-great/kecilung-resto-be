@@ -43,6 +43,40 @@ func (r *cateringRepo) CreateCatering(c *domain.Catering) error {
 	return r.db.Create(c).Error
 }
 
+// === TAMBAHAN BARU: UPDATE CATERING ===
+func (r *cateringRepo) UpdateCatering(c *domain.Catering) error {
+	// Gunakan transaksi agar jika gagal di tengah jalan, database di-rollback
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Update data teks utama
+		if err := tx.Model(&domain.Catering{}).Where("id = ?", c.ID).Updates(map[string]interface{}{
+			"name":        c.Name,
+			"description": c.Description,
+		}).Error; err != nil {
+			return err
+		}
+
+		// 2. Jika ada gambar baru yang diunggah, hapus gambar lama dan masukkan yang baru
+		if len(c.Images) > 0 {
+			if err := tx.Where("catering_id = ?", c.ID).Delete(&domain.CateringImage{}).Error; err != nil {
+				return err
+			}
+			for i := range c.Images {
+				c.Images[i].CateringID = c.ID
+			}
+			if err := tx.Create(&c.Images).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// === TAMBAHAN BARU: DELETE CATERING ===
+func (r *cateringRepo) DeleteCatering(id uint) error {
+	// Berkat constraint:OnDelete:CASCADE di struct, menghapus Catering otomatis menghapus semua CateringImage miliknya
+	return r.db.Delete(&domain.Catering{}, id).Error
+}
+
 // -- Booking --
 func (r *cateringRepo) FetchBookings() ([]domain.Booking, error) {
 	var bookings []domain.Booking
