@@ -97,6 +97,9 @@ func initApp() {
 	menuRepo := repository.NewMenuRepository(db)
 	menuUseCase := usecase.NewMenuUsecase(menuRepo)
 
+	cateringRepo := repository.NewCateringRepository(db)
+	cateringUseCase := usecase.NewCateringUsecase(cateringRepo)
+
 	gin.SetMode(gin.ReleaseMode)
 	app = gin.Default()
 
@@ -122,7 +125,7 @@ func initApp() {
 	})
 
 	// Daftarkan Routes
-	httpDelivery.RegisterHandlers(app, catUseCase, menuUseCase)
+	httpDelivery.RegisterHandlers(app, catUseCase, menuUseCase, cateringUseCase)
 }
 
 // // Handler ini adalah pintu masuk utama Vercel

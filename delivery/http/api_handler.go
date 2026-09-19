@@ -9,7 +9,31 @@ import (
 	"github.com/seanalden-great/kecilung-resto-be/utils"
 )
 
-func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUsecase) {
+// func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUsecase) {
+// 	api := r.Group("/api")
+
+// 	// Routes Kategori
+// 	cat := api.Group("/categories")
+// 	{
+// 		cat.GET("", fetchCategories(cu))
+// 		cat.POST("", createCategory(cu))
+// 		cat.PUT("/:id", updateCategory(cu))
+// 		cat.DELETE("/:id", deleteCategory(cu))
+// 	}
+
+// 	// Routes Menu
+// 	menu := api.Group("/menus")
+// 	{
+// 		menu.GET("", fetchMenus(mu))
+// 		menu.GET("/category/:id", getMenusByCategory(mu))
+// 		menu.POST("", createMenu(mu))
+// 		menu.PUT("/:id", updateMenu(mu))
+// 		menu.DELETE("/:id", deleteMenu(mu))
+// 	}
+// }
+
+// PERUBAHAN 1: Tambahkan catUsecase domain.CateringUsecase di parameter ini
+func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUsecase, catUsecase domain.CateringUsecase) {
 	api := r.Group("/api")
 
 	// Routes Kategori
@@ -29,6 +53,19 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 		menu.POST("", createMenu(mu))
 		menu.PUT("/:id", updateMenu(mu))
 		menu.DELETE("/:id", deleteMenu(mu))
+	}
+
+	// Routes Catering
+	catering := api.Group("/catering")
+	{
+		catering.GET("/greeting", getGreeting(catUsecase)) 
+		catering.PUT("/greeting", updateGreeting(catUsecase))
+		catering.GET("/packages", getCaterings(catUsecase))
+		catering.POST("/packages", createCateringPackage(catUsecase))
+		catering.GET("/bookings", getBookings(catUsecase))
+		catering.POST("/bookings", createBooking(catUsecase))
+		catering.PUT("/bookings/:id/approve", approveBooking(catUsecase))
+		catering.PUT("/bookings/:id/reject", rejectBooking(catUsecase))
 	}
 }
 
@@ -270,5 +307,119 @@ func deleteMenu(u domain.MenuUsecase) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Menu berhasil dihapus"})
+	}
+}
+
+// ====================================================================
+// === HANDLERS CATERING (TAMBAHKAN KODE INI DI BAGIAN PALING BAWAH) ===
+// ====================================================================
+
+func getGreeting(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		msg, err := u.GetGreeting()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": msg})
+	}
+}
+
+func updateGreeting(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var msg domain.GreetingMessage
+		if err := c.ShouldBindJSON(&msg); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if err := u.UpdateGreeting(&msg); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Pesan sambutan berhasil diupdate"})
+	}
+}
+
+func getBookings(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := u.GetAllBookings()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
+func approveBooking(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		if err := u.ApproveBooking(uint(id)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Booking disetujui"})
+	}
+}
+
+func rejectBooking(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		if err := u.RejectBooking(uint(id)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Booking ditolak"})
+	}
+}
+
+func getCaterings(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, _ := u.GetAllCaterings()
+		c.JSON(200, gin.H{"data": res})
+	}
+}
+
+func createCateringPackage(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+
+		var images []domain.CateringImage
+		
+		// Deteksi multi-upload
+		form, err := c.MultipartForm()
+		if err == nil {
+			files := form.File["images"]
+			for _, file := range files {
+				url, errUp := utils.UploadToCleverCloud(file)
+				if errUp == nil {
+					images = append(images, domain.CateringImage{ImageURL: url})
+				}
+			}
+		}
+
+		catering := domain.Catering{ Name: name, Description: description, Images: images }
+		if err := u.CreateCatering(&catering); err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(201, gin.H{"message": "Katering ditambahkan"})
+	}
+}
+
+func createBooking(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var b domain.Booking
+		if err := c.ShouldBindJSON(&b); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		if err := u.CreateBooking(&b); err != nil {
+			// Menampilkan error jika jadwal bentrok
+			c.JSON(409, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(201, gin.H{"message": "Booking berhasil diajukan"})
 	}
 }
