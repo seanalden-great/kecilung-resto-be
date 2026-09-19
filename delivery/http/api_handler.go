@@ -61,6 +61,7 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 		catering.GET("/greeting", getGreeting(catUsecase))
 		catering.PUT("/greeting", updateGreeting(catUsecase))
 		catering.GET("/packages", getCaterings(catUsecase))
+		catering.GET("/packages/:id", getCateringPackageByID(catUsecase))
 		catering.POST("/packages", createCateringPackage(catUsecase))
 		// Tambahkan 2 baris ini di dalam RegisterHandlers -> catering := api.Group("/catering")
 		catering.PUT("/packages/:id", updateCateringPackage(catUsecase))
@@ -380,6 +381,18 @@ func getCaterings(u domain.CateringUsecase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		res, _ := u.GetAllCaterings()
 		c.JSON(200, gin.H{"data": res})
+	}
+}
+
+func getCateringPackageByID(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		res, err := u.GetCateringByID(uint(id))
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Data katering tidak ditemukan"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": res})
 	}
 }
 
