@@ -18,7 +18,7 @@
 // func init() {
 // 	// Koneksi Database (menggunakan variabel environment Vercel)
 // 	db := config.ConnectDatabase()
-	
+
 // 	// Migrasi Tabel
 // 	err := db.AutoMigrate(&domain.Category{}, &domain.Menu{})
 // 	if err != nil {
@@ -64,6 +64,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/seanalden-great/kecilung-resto-be/config"
@@ -73,7 +74,12 @@ import (
 	"github.com/seanalden-great/kecilung-resto-be/usecase"
 )
 
-var app *gin.Engine
+// var app *gin.Engine
+
+var (
+	app  *gin.Engine
+	once sync.Once // 2. Daftarkan variabel penjaga gerbang
+)
 
 // Kita buat fungsi inisialisasi terpisah (BUKAN init() bawaan Go)
 func initApp() {
@@ -121,12 +127,24 @@ func initApp() {
 	httpDelivery.RegisterHandlers(app, catUseCase, menuUseCase)
 }
 
-// Handler ini adalah pintu masuk utama Vercel
+// // Handler ini adalah pintu masuk utama Vercel
+// func Handler(w http.ResponseWriter, r *http.Request) {
+// 	// Jika aplikasi belum diinisialisasi (request pertama), maka inisialisasi sekarang
+// 	if app == nil {
+// 		initApp()
+// 	}
+// 	// Teruskan request ke Gin Router
+// 	app.ServeHTTP(w, r)
+// }
+
+// 3. Modifikasi fungsi Handler utama Vercel
 func Handler(w http.ResponseWriter, r *http.Request) {
-	// Jika aplikasi belum diinisialisasi (request pertama), maka inisialisasi sekarang
-	if app == nil {
+	// once.Do memastikan fungsi initApp hanya dieksekusi 1x seumur hidup instance
+	// Meskipun ratusan request datang menabrak bersamaan, yang lain akan menunggu hingga eksekusi pertama selesai
+	once.Do(func() {
 		initApp()
-	}
+	})
+
 	// Teruskan request ke Gin Router
 	app.ServeHTTP(w, r)
 }
