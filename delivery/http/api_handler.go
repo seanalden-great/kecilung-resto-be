@@ -33,7 +33,7 @@ import (
 // }
 
 // PERUBAHAN 1: Tambahkan catUsecase domain.CateringUsecase di parameter ini
-func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUsecase, catUsecase domain.CateringUsecase, momentUsecase domain.MomentUsecase) {
+func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUsecase, catUsecase domain.CateringUsecase, momentUsecase domain.MomentUsecase, articleUsecase domain.ArticleUsecase) {
 	api := r.Group("/api")
 
 	// Routes Kategori
@@ -84,6 +84,16 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 		moment.POST("/bookings", createMomentBooking(momentUsecase))
 		moment.PUT("/bookings/:id/approve", approveMomentBooking(momentUsecase))
 		moment.PUT("/bookings/:id/reject", rejectMomentBooking(momentUsecase))
+	}
+
+	// === TAMBAHKAN ROUTES ARTICLE DI SINI ===
+	article := api.Group("/articles")
+	{
+		article.GET("", getArticles(articleUsecase))
+		article.GET("/:id", getArticleByID(articleUsecase))
+		article.POST("", createArticle(articleUsecase))
+		article.PUT("/:id", updateArticle(articleUsecase))
+		article.DELETE("/:id", deleteArticle(articleUsecase))
 	}
 }
 
@@ -704,5 +714,100 @@ func deleteMomentPackage(u domain.MomentUsecase) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Moment berhasil dihapus"})
+	}
+}
+
+// ====================================================================
+// === HANDLERS ARTICLE (TAMBAHKAN KODE INI DI BAGIAN PALING BAWAH) ===
+// ====================================================================
+
+func getArticles(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := u.GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
+func getArticleByID(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		res, err := u.GetByID(uint(id))
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Data artikel tidak ditemukan"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
+func createArticle(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		code := c.PostForm("code")
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+
+		var images []domain.ArticleImage
+
+		// Deteksi multi-upload
+		form, err := c.MultipartForm()
+		if err == nil {
+			files := form.File["images"]
+			for _, file := range files {
+				url, errUp := utils.UploadToCleverCloud(file)
+				if errUp == nil {
+					images = append(images, domain.ArticleImage{ImageURL: url})
+				}
+			}
+		}
+
+		article := domain.Article{Code: code, Name: name, Description: description, Images: images}
+		if err := u.Create(&article); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusCreated, gin.H{"message": "Artikel berhasil ditambahkan", "data": article})
+	}
+}
+
+func updateArticle(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		code := c.PostForm("code")
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+
+		var images []domain.ArticleImage
+		form, err := c.MultipartForm()
+		if err == nil {
+			files := form.File["images"]
+			for _, file := range files {
+				url, errUp := utils.UploadToCleverCloud(file)
+				if errUp == nil {
+					images = append(images, domain.ArticleImage{ImageURL: url})
+				}
+			}
+		}
+
+		article := domain.Article{Code: code, Name: name, Description: description, Images: images}
+		if err := u.Update(uint(id), &article); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Artikel berhasil diupdate"})
+	}
+}
+
+func deleteArticle(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		if err := u.Delete(uint(id)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Artikel berhasil dihapus"})
 	}
 }
