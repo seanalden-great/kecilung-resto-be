@@ -33,7 +33,7 @@ import (
 // }
 
 // PERUBAHAN 1: Tambahkan catUsecase domain.CateringUsecase di parameter ini
-func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUsecase, catUsecase domain.CateringUsecase, momentUsecase domain.MomentUsecase, articleUsecase domain.ArticleUsecase) {
+func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUsecase, catUsecase domain.CateringUsecase, momentUsecase domain.MomentUsecase, articleUsecase domain.ArticleUsecase, contactUsecase domain.ContactUsecase) {
 	api := r.Group("/api")
 
 	// Routes Kategori
@@ -94,6 +94,13 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 		article.POST("", createArticle(articleUsecase))
 		article.PUT("/:id", updateArticle(articleUsecase))
 		article.DELETE("/:id", deleteArticle(articleUsecase))
+	}
+
+	// === TAMBAHKAN ROUTES CONTACT DI SINI ===
+	contact := api.Group("/contacts")
+	{
+		contact.POST("", createContact(contactUsecase))
+		contact.GET("", getContacts(contactUsecase)) // Opsional untuk Admin
 	}
 }
 
@@ -809,5 +816,35 @@ func deleteArticle(u domain.ArticleUsecase) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Artikel berhasil dihapus"})
+	}
+}
+
+// ====================================================================
+// === HANDLERS CONTACT (TAMBAHKAN KODE INI DI BAGIAN PALING BAWAH) ===
+// ====================================================================
+
+func createContact(u domain.ContactUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var contactData domain.ContactUs
+		if err := c.ShouldBindJSON(&contactData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if err := u.Create(&contactData); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusCreated, gin.H{"message": "Pesan Anda berhasil dikirim", "data": contactData})
+	}
+}
+
+func getContacts(u domain.ContactUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := u.GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": res})
 	}
 }

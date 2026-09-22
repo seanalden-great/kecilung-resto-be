@@ -97,6 +97,7 @@ func initApp() {
 		&domain.MomentBooking{},
 		&domain.Article{},         // <--- TAMBAH INI
 		&domain.ArticleImage{},    // <--- TAMBAH INI
+		&domain.ContactUs{}, // <--- TAMBAH INI
 	)
 	if err != nil {
 		log.Println("Gagal migrasi:", err)
@@ -118,6 +119,10 @@ func initApp() {
 	// === TAMBAHKAN INISIALISASI ARTICLE DI SINI ===
 	articleRepo := repository.NewArticleRepository(db)
 	articleUseCase := usecase.NewArticleUsecase(articleRepo)
+
+	// Pada blok Inisialisasi Arsitektur, tambahkan baris berikut:
+	contactRepo := repository.NewContactRepository(db)
+	contactUseCase := usecase.NewContactUsecase(contactRepo)
 
 	gin.SetMode(gin.ReleaseMode)
 	app = gin.Default()
@@ -144,7 +149,7 @@ func initApp() {
 	})
 
 	// Daftarkan Routes
-	httpDelivery.RegisterHandlers(app, catUseCase, menuUseCase, cateringUseCase, momentUseCase, articleUseCase)
+	httpDelivery.RegisterHandlers(app, catUseCase, menuUseCase, cateringUseCase, momentUseCase, articleUseCase, contactUseCase)
 }
 
 // // Handler ini adalah pintu masuk utama Vercel
