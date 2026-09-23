@@ -97,7 +97,7 @@ func (r *momentRepo) CheckTimeConflict(start, end time.Time) (bool, error) {
 // Tambahkan fungsi baru ini:
 func (r *momentRepo) FetchApprovedBookingsByMomentID(id uint) ([]domain.MomentBooking, error) {
 	var bookings []domain.MomentBooking
-	err := r.db.Where("catering_id = ? AND status = ?", id, "APPROVED").Order("booking_date asc").Find(&bookings).Error
+	err := r.db.Where("moment_id = ? AND status = ?", id, "APPROVED").Order("booking_date asc").Find(&bookings).Error
 	return bookings, err
 }
 
