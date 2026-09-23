@@ -18,7 +18,7 @@
 // func init() {
 // 	// Koneksi Database (menggunakan variabel environment Vercel)
 // 	db := config.ConnectDatabase()
-	
+
 // 	// Migrasi Tabel
 // 	err := db.AutoMigrate(&domain.Category{}, &domain.Menu{})
 // 	if err != nil {
@@ -72,6 +72,7 @@ import (
 	"github.com/seanalden-great/kecilung-resto-be/domain"
 	"github.com/seanalden-great/kecilung-resto-be/repository"
 	"github.com/seanalden-great/kecilung-resto-be/usecase"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -98,6 +99,7 @@ func initApp() {
 		&domain.Article{},         // <--- TAMBAH INI
 		&domain.ArticleImage{},    // <--- TAMBAH INI
 		&domain.ContactUs{}, // <--- TAMBAH INI
+		&domain.Admin{}, // <--- TAMBAH INI
 	)
 	if err != nil {
 		log.Println("Gagal migrasi:", err)
@@ -124,6 +126,19 @@ func initApp() {
 	contactRepo := repository.NewContactRepository(db)
 	contactUseCase := usecase.NewContactUsecase(contactRepo)
 
+	// Pada blok Inisialisasi Arsitektur, tambahkan baris berikut:
+	authRepo := repository.NewAuthRepository(db)
+	authUseCase := usecase.NewAuthUsecase(authRepo)
+
+	// BUAT AKUN ADMIN DEFAULT (username: admin, password: password123)
+	// Hanya akan berjalan jika tabel admins masih kosong
+	hashedPass, _ := bcrypt.GenerateFromPassword([]byte("adminkecilung!1@2#3"), bcrypt.DefaultCost)
+	authRepo.CreateDefaultAdmin(&domain.Admin{
+		Name:     "Admin Kecilung",
+		Username: "adminkecilung",
+		Password: string(hashedPass),
+	})
+
 	gin.SetMode(gin.ReleaseMode)
 	app = gin.Default()
 
@@ -149,7 +164,7 @@ func initApp() {
 	})
 
 	// Daftarkan Routes
-	httpDelivery.RegisterHandlers(app, catUseCase, menuUseCase, cateringUseCase, momentUseCase, articleUseCase, contactUseCase)
+	httpDelivery.RegisterHandlers(app, catUseCase, menuUseCase, cateringUseCase, momentUseCase, articleUseCase, contactUseCase, authUseCase)
 }
 
 // // Handler ini adalah pintu masuk utama Vercel
