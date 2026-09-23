@@ -1,0 +1,117 @@
+package http
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/seanalden-great/kecilung-resto-be/domain"
+	"github.com/seanalden-great/kecilung-resto-be/utils"
+)
+
+func RegisterArticleHandlers(rg *gin.RouterGroup, u domain.ArticleUsecase) {
+// === TAMBAHKAN ROUTES ARTICLE DI SINI ===
+	article := rg.Group("/articles")
+	{
+		article.GET("", getArticles(u))
+		article.GET("/:id", getArticleByID(u))
+		article.POST("", createArticle(u))
+		article.PUT("/:id", updateArticle(u))
+		article.DELETE("/:id", deleteArticle(u))
+	}
+}
+
+// ====================================================================
+// === HANDLERS ARTICLE (TAMBAHKAN KODE INI DI BAGIAN PALING BAWAH) ===
+// ====================================================================
+
+func getArticles(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := u.GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
+func getArticleByID(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		res, err := u.GetByID(uint(id))
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Data artikel tidak ditemukan"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
+func createArticle(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		code := c.PostForm("code")
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+
+		var images []domain.ArticleImage
+
+		// Deteksi multi-upload
+		form, err := c.MultipartForm()
+		if err == nil {
+			files := form.File["images"]
+			for _, file := range files {
+				url, errUp := utils.UploadToCleverCloud(file)
+				if errUp == nil {
+					images = append(images, domain.ArticleImage{ImageURL: url})
+				}
+			}
+		}
+
+		article := domain.Article{Code: code, Name: name, Description: description, Images: images}
+		if err := u.Create(&article); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusCreated, gin.H{"message": "Artikel berhasil ditambahkan", "data": article})
+	}
+}
+
+func updateArticle(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		code := c.PostForm("code")
+		name := c.PostForm("name")
+		description := c.PostForm("description")
+
+		var images []domain.ArticleImage
+		form, err := c.MultipartForm()
+		if err == nil {
+			files := form.File["images"]
+			for _, file := range files {
+				url, errUp := utils.UploadToCleverCloud(file)
+				if errUp == nil {
+					images = append(images, domain.ArticleImage{ImageURL: url})
+				}
+			}
+		}
+
+		article := domain.Article{Code: code, Name: name, Description: description, Images: images}
+		if err := u.Update(uint(id), &article); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Artikel berhasil diupdate"})
+	}
+}
+
+func deleteArticle(u domain.ArticleUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		if err := u.Delete(uint(id)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Artikel berhasil dihapus"})
+	}
+}
