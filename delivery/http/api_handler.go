@@ -103,6 +103,7 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 	{
 		contact.POST("", createContact(contactUsecase))
 		contact.GET("", getContacts(contactUsecase)) // Opsional untuk Admin
+		contact.PUT("/:id/reply", replyContact(contactUsecase)) // <--- TAMBAH BARIS INI
 	}
 }
 
@@ -874,5 +875,28 @@ func getContacts(u domain.ContactUsecase) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
+// Tambahkan handler baru ini di bawah getContacts:
+func replyContact(u domain.ContactUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		
+		// Kita ambil text balasan dari JSON body
+		var payload struct {
+			Reply string `json:"reply"`
+		}
+		if err := c.ShouldBindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Format data tidak valid"})
+			return
+		}
+
+		if err := u.ReplyMessage(uint(id), payload.Reply); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Pesan berhasil dibalas"})
 	}
 }

@@ -29,3 +29,11 @@ func (u *contactUsecase) Create(c *domain.ContactUs) error {
 func (u *contactUsecase) GetAll() ([]domain.ContactUs, error) {
 	return u.repo.FetchAll()
 }
+
+// Tambahkan fungsi ini di bagian bawah usecase/contact_usecase.go
+func (u *contactUsecase) ReplyMessage(id uint, replyText string) error {
+	if strings.TrimSpace(replyText) == "" {
+		return errors.New("balasan tidak boleh kosong")
+	}
+	return u.repo.UpdateReply(id, replyText)
+}
