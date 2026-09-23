@@ -26,11 +26,26 @@ func (u *momentUsecase) DeleteMoment(id uint) error { return u.repo.DeleteMoment
 
 func (u *momentUsecase) GetAllBookings() ([]domain.MomentBooking, error) { return u.repo.FetchBookings() }
 
+// func (u *momentUsecase) CreateBooking(b *domain.MomentBooking) error {
+// 	exists, err := u.repo.CheckApprovedBookingExists(b.BookingDate)
+// 	if err != nil { return err }
+// 	if exists {
+// 		return errors.New("Mohon maaf, jadwal pada tanggal tersebut sudah penuh dipesan.")
+// 	}
+// 	b.Status = "PENDING"
+// 	return u.repo.CreateBooking(b)
+// }
+
 func (u *momentUsecase) CreateBooking(b *domain.MomentBooking) error {
-	exists, err := u.repo.CheckApprovedBookingExists(b.BookingDate)
+	// Pastikan waktu selesai > waktu mulai
+	if !b.BookingEndDate.After(b.BookingDate) {
+		return errors.New("waktu selesai harus lebih besar dari waktu mulai")
+	}
+
+	exists, err := u.repo.CheckTimeConflict(b.BookingDate, b.BookingEndDate)
 	if err != nil { return err }
 	if exists {
-		return errors.New("Mohon maaf, jadwal pada tanggal tersebut sudah penuh dipesan.")
+		return errors.New("Mohon maaf, jadwal pada waktu tersebut bertabrakan dengan pesanan lain.")
 	}
 	b.Status = "PENDING"
 	return u.repo.CreateBooking(b)
@@ -38,3 +53,8 @@ func (u *momentUsecase) CreateBooking(b *domain.MomentBooking) error {
 
 func (u *momentUsecase) ApproveBooking(id uint) error { return u.repo.UpdateBookingStatus(id, "APPROVED") }
 func (u *momentUsecase) RejectBooking(id uint) error { return u.repo.UpdateBookingStatus(id, "REJECTED") }
+
+// Tambahkan fungsi ini
+func (u *momentUsecase) GetApprovedBookingsByMomentID(id uint) ([]domain.MomentBooking, error) {
+	return u.repo.FetchApprovedBookingsByMomentID(id)
+}

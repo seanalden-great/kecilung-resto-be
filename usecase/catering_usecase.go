@@ -32,12 +32,27 @@ func (u *cateringUsecase) DeleteCatering(id uint) error {
 
 func (u *cateringUsecase) GetAllBookings() ([]domain.Booking, error) { return u.repo.FetchBookings() }
 
+// func (u *cateringUsecase) CreateBooking(b *domain.Booking) error {
+// 	// CEK BENTROK: Apakah tanggal ini sudah ada yang APPROVED?
+// 	exists, err := u.repo.CheckApprovedBookingExists(b.BookingDate)
+// 	if err != nil { return err }
+// 	if exists {
+// 		return errors.New("Mohon maaf, jadwal pada tanggal tersebut sudah penuh dipesan.")
+// 	}
+// 	b.Status = "PENDING"
+// 	return u.repo.CreateBooking(b)
+// }
+
 func (u *cateringUsecase) CreateBooking(b *domain.Booking) error {
-	// CEK BENTROK: Apakah tanggal ini sudah ada yang APPROVED?
-	exists, err := u.repo.CheckApprovedBookingExists(b.BookingDate)
+	// Pastikan waktu selesai > waktu mulai
+	if !b.BookingEndDate.After(b.BookingDate) {
+		return errors.New("waktu selesai harus lebih besar dari waktu mulai")
+	}
+
+	exists, err := u.repo.CheckTimeConflict(b.BookingDate, b.BookingEndDate)
 	if err != nil { return err }
 	if exists {
-		return errors.New("Mohon maaf, jadwal pada tanggal tersebut sudah penuh dipesan.")
+		return errors.New("Mohon maaf, jadwal pada waktu tersebut bertabrakan dengan pesanan lain.")
 	}
 	b.Status = "PENDING"
 	return u.repo.CreateBooking(b)
@@ -50,4 +65,9 @@ func (u *cateringUsecase) ApproveBooking(id uint) error {
 
 func (u *cateringUsecase) RejectBooking(id uint) error {
 	return u.repo.UpdateBookingStatus(id, "REJECTED")
+}
+
+// Tambahkan fungsi ini
+func (u *cateringUsecase) GetApprovedBookingsByCateringID(id uint) ([]domain.Booking, error) {
+	return u.repo.FetchApprovedBookingsByCateringID(id)
 }

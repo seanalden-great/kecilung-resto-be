@@ -71,10 +71,33 @@ func (r *momentRepo) UpdateBookingStatus(id uint, status string) error {
 	return r.db.Model(&domain.MomentBooking{}).Where("id = ?", id).Update("status", status).Error
 }
 
-func (r *momentRepo) CheckApprovedBookingExists(date time.Time) (bool, error) {
+// func (r *momentRepo) CheckApprovedBookingExists(date time.Time) (bool, error) {
+// 	var count int64
+// 	err := r.db.Model(&domain.MomentBooking{}).
+// 		Where("DATE(booking_date) = DATE(?) AND status = ?", date, "APPROVED").
+// 		Count(&count).Error
+// 	return count > 0, err
+// }
+
+// Ganti fungsi CheckApprovedBookingExists dengan:
+func (r *momentRepo) CheckTimeConflict(start, end time.Time) (bool, error) {
 	var count int64
+	// Logika Overlap:
+	// Booking Baru tumpang tindih dengan Booking Lama (APPROVED) JIKA:
+	// (StartBaru < EndLama) AND (EndBaru > StartLama)
 	err := r.db.Model(&domain.MomentBooking{}).
-		Where("DATE(booking_date) = DATE(?) AND status = ?", date, "APPROVED").
+		Where("status = ?", "APPROVED").
+		Where("booking_date < ? AND booking_end_date > ?", end, start).
 		Count(&count).Error
 	return count > 0, err
 }
+
+// Di fungsi FetchBookings, pastikan mengambil booking berdasarkan ID spesifik 
+// agar kita bisa menampilkannya di halaman detail paket tertentu.
+// Tambahkan fungsi baru ini:
+func (r *momentRepo) FetchApprovedBookingsByMomentID(id uint) ([]domain.MomentBooking, error) {
+	var bookings []domain.MomentBooking
+	err := r.db.Where("catering_id = ? AND status = ?", id, "APPROVED").Order("booking_date asc").Find(&bookings).Error
+	return bookings, err
+}
+

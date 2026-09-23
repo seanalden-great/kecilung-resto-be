@@ -70,6 +70,7 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 		catering.POST("/bookings", createBooking(catUsecase))
 		catering.PUT("/bookings/:id/approve", approveBooking(catUsecase))
 		catering.PUT("/bookings/:id/reject", rejectBooking(catUsecase))
+		catering.GET("/packages/:id/bookings", getApprovedCateringBookings(catUsecase))
 	}
 
 	moment := api.Group("/moments")
@@ -84,6 +85,7 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 		moment.POST("/bookings", createMomentBooking(momentUsecase))
 		moment.PUT("/bookings/:id/approve", approveMomentBooking(momentUsecase))
 		moment.PUT("/bookings/:id/reject", rejectMomentBooking(momentUsecase))
+		moment.GET("/packages/:id/bookings", getApprovedMomentBookings(momentUsecase))
 	}
 
 	// === TAMBAHKAN ROUTES ARTICLE DI SINI ===
@@ -101,6 +103,32 @@ func RegisterHandlers(r *gin.Engine, cu domain.CategoryUsecase, mu domain.MenuUs
 	{
 		contact.POST("", createContact(contactUsecase))
 		contact.GET("", getContacts(contactUsecase)) // Opsional untuk Admin
+	}
+}
+
+// Lalu buat handlernya di bawah:
+func getApprovedCateringBookings(u domain.CateringUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		res, err := u.GetApprovedBookingsByCateringID(uint(id))
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"data": res})
+	}
+}
+
+// Lalu buat handlernya di bawah:
+func getApprovedMomentBookings(u domain.MomentUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		res, err := u.GetApprovedBookingsByMomentID(uint(id))
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"data": res})
 	}
 }
 
