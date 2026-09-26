@@ -132,7 +132,7 @@ func initApp() {
 
 	// BUAT AKUN ADMIN DEFAULT (username: admin, password: password123)
 	// Hanya akan berjalan jika tabel admins masih kosong
-	hashedPass, _ := bcrypt.GenerateFromPassword([]byte("adminkecilung!1@2#3"), bcrypt.DefaultCost)
+	hashedPass, _ := bcrypt.GenerateFromPassword([]byte("adminkecilung_!1@2#3"), bcrypt.DefaultCost)
 	authRepo.CreateDefaultAdmin(&domain.Admin{
 		Name:     "Admin Kecilung",
 		Username: "adminkecilung",
