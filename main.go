@@ -127,7 +127,7 @@ func main() {
 
 	// === 3. INJEKSI AKUN ADMIN DEFAULT ===
 	// Hanya akan berjalan jika tabel admins masih kosong (Sama seperti di Vercel)
-	hashedPass, _ := bcrypt.GenerateFromPassword([]byte("adminkecilung!1@2#3"), bcrypt.DefaultCost)
+	hashedPass, _ := bcrypt.GenerateFromPassword([]byte("adminkecilung_!1@2#3"), bcrypt.DefaultCost)
 	authRepo.CreateDefaultAdmin(&domain.Admin{
 		Name:     "Admin Kecilung",
 		Username: "adminkecilung",
