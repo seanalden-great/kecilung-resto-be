@@ -137,6 +137,9 @@ func main() {
 	// === 4. INIT ROUTER ===
 	r := gin.Default()
 
+	// Memuat file template HTML
+	r.LoadHTMLFiles("welcome.tmpl")
+
 	// MIDDLEWARE CORS
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -147,6 +150,14 @@ func main() {
 			return
 		}
 		c.Next()
+	})
+
+	// === HALAMAN WELCOME API ===
+	r.GET("/", func(c *gin.Context) {
+		// Mengirimkan variabel versi dari Gin ke dalam template
+		c.HTML(200, "welcome.tmpl", gin.H{
+			"version": gin.Version,
+		})
 	})
 
 	// Endpoint Debug (Opsional, untuk konsistensi)
