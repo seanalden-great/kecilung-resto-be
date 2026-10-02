@@ -76,7 +76,7 @@ func updateProfile(u domain.AuthUsecase) gin.HandlerFunc {
 		adminData := domain.Admin{
 			Name:     name,
 			Username: username,
-			Email:    email, // TAMBAHAN: Masukkan ke struct
+			Email:    email,
 			Password: password,
 		}
 		
